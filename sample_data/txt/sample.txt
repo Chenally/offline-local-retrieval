@@ -1,0 +1,4 @@
+Offline Local Retrieval System
+
+This project searches local documents and images without sending user data to the cloud.
+The system is designed to support accessible and private semantic retrieval.

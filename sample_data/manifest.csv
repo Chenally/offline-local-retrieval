@@ -1,0 +1,4 @@
+id,modality,format,path,source,purpose
+txt-001,text,txt,sample_data/txt/sample.txt,self-created,Tika text parsing validation
+pdf-001,text,pdf,sample_data/pdf/sample.pdf,self-created,Tika and PDFium parsing validation
+img-001,image,jpg,sample_data/images/sample.jpg,self-created,Future image embedding validation
