@@ -240,7 +240,7 @@ The final interface will target WCAG 2.1 AA and include:
 | Week | Focus | Status |
 | --- | --- | --- |
 | 1 | Requirements, repository setup, and technical validation | Completed |
-| 2 | Architecture and file-ingestion foundation | In progress |
+| 2 | Architecture and file-ingestion foundation | Completed |
 | 3 | Offline text and image embedding engine | Planned |
 | 4 | ChromaDB integration, hybrid ranking, and retrieval MVP | Planned |
 | 5 | Flutter UI and accessibility implementation | Planned |
