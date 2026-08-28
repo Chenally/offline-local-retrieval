@@ -2,7 +2,7 @@
 
 An offline-first, cross-platform application for discovering and retrieving information from local documents and images. The project is designed to make personal content easier to search without uploading private files to cloud services, while targeting WCAG 2.1 AA accessibility requirements.
 
-> **Development status:** This is an active eight-week software engineering project. Week 1 is complete, and the Week 2 file-ingestion foundation is currently under development.
+> **Development status:** This is an active eight-week software engineering project. Weeks 1 through 3 are complete, and Week 4 retrieval integration is the next milestone.
 
 ## Project Motivation
 
@@ -29,15 +29,28 @@ This project aims to provide:
 - Created and built the initial Flutter macOS application
 - Added sample local files, test utilities, and Git ignore rules
 
-### Week 2 - In Progress
+### Week 2 - Completed
 
-- Defining stable interfaces for scanning, parsing, embedding, storage, and retrieval
-- Implementing recursive file discovery
-- Implementing file metadata and SHA-256 duplicate detection
-- Implementing TXT and PDF parsers
-- Implementing recoverable batch-ingestion error handling
-- Adding tests for valid, corrupted, unsupported, duplicate, and permission-restricted files
-- Targeting at least 80% unit-test coverage for the parsing module
+- Defined stable interfaces for file scanning, parsing, and ingestion
+- Implemented recursive local file discovery
+- Added file metadata collection and SHA-256 duplicate detection
+- Implemented TXT and PDF parsers
+- Added recoverable batch-ingestion error handling
+- Added tests for valid, corrupted, unsupported, duplicate, and permission-restricted files
+- Completed the Week 2 file-ingestion foundation and parsing regression suite
+
+### Week 3 - Completed
+
+- Added separate `TEXT_SEMANTIC` and `MULTIMODAL` embedding spaces
+- Integrated a local BERT-compatible LiteRT backend for text-to-text retrieval
+- Converted and integrated MobileCLIP-S0 text and image LiteRT encoders
+- Added BERT WordPiece and MobileCLIP tokenizers
+- Added text and image preprocessing with model tensor-contract validation
+- Added a unified embedding service with L2 normalization and in-memory caching
+- Verified MobileCLIP LiteRT outputs against the official PyTorch checkpoint
+- Verified real BERT and MobileCLIP inference on macOS
+- Completed 77 backend tests with 96.19% embedding-package coverage
+- Documented the implementation in [`docs/week3/README.md`](docs/week3/README.md)
 
 ## Planned Features
 
@@ -88,8 +101,8 @@ The architecture separates file input/output, parsing, embedding, vector storage
 | Cross-platform UI | Flutter, Dart |
 | Document parsing | PDFium through `pypdfium2`, Apache Tika |
 | Local inference | LiteRT / TensorFlow Lite |
-| Planned text model | BERT-compatible TensorFlow Lite model |
-| Planned image model | MobileCLIP-compatible text and image encoders |
+| Text model | BERT-compatible LiteRT model |
+| Multimodal model | MobileCLIP-S0 text and image LiteRT encoders |
 | Vector storage | ChromaDB |
 | Backend testing | pytest, pytest-cov |
 | UI testing | Flutter Test |
@@ -241,7 +254,7 @@ The final interface will target WCAG 2.1 AA and include:
 | --- | --- | --- |
 | 1 | Requirements, repository setup, and technical validation | Completed |
 | 2 | Architecture and file-ingestion foundation | Completed |
-| 3 | Offline text and image embedding engine | Planned |
+| 3 | Offline text and multimodal embedding engine | Completed |
 | 4 | ChromaDB integration, hybrid ranking, and retrieval MVP | Planned |
 | 5 | Flutter UI and accessibility implementation | Planned |
 | 6 | Integration, testing, privacy review, and performance optimization | Planned |

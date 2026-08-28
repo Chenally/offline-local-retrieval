@@ -16,6 +16,8 @@ runtime/
 
 # Local models
 models/*.tflite
+models/*.txt
+models/mobileclip_s0_tokenizer.json
 
 # IDE
 .vscode/
