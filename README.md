@@ -2,7 +2,7 @@
 
 An offline-first, cross-platform application for discovering and retrieving information from local documents and images. The project is designed to make personal content easier to search without uploading private files to cloud services, while targeting WCAG 2.1 AA accessibility requirements.
 
-> **Development status:** This is an active eight-week software engineering project. Weeks 1 through 3 are complete, and Week 4 retrieval integration is the next milestone.
+> **Development status:** This is an active eight-week software engineering project. Weeks 1 through 4 are complete, and the Week 5 Flutter and accessibility integration is the next milestone.
 
 ## Project Motivation
 
@@ -51,6 +51,19 @@ This project aims to provide:
 - Verified real BERT and MobileCLIP inference on macOS
 - Completed 77 backend tests with 96.19% embedding-package coverage
 - Documented the implementation in [`docs/week3/README.md`](docs/week3/README.md)
+
+### Week 4 - Completed
+
+- Added persistent cosine-similarity vector storage with ChromaDB
+- Isolated text-semantic and multimodal collections by embedding space, model, and modality
+- Added document and image indexing coordination
+- Added three-channel retrieval for BERT text, MobileCLIP text, and MobileCLIP images
+- Added explainable hybrid ranking with keyword, text-semantic, and multimodal scores
+- Added deterministic tie-breaking and search-service composition
+- Verified persistence with a new ChromaDB store instance
+- Completed 37 Week 4 tests with 91.69% retrieval-package coverage
+- Completed 114 backend tests with 94.18% combined embedding and retrieval coverage
+- Documented the implementation in [`docs/week4/README.md`](docs/week4/README.md)
 
 ## Planned Features
 
@@ -255,7 +268,7 @@ The final interface will target WCAG 2.1 AA and include:
 | 1 | Requirements, repository setup, and technical validation | Completed |
 | 2 | Architecture and file-ingestion foundation | Completed |
 | 3 | Offline text and multimodal embedding engine | Completed |
-| 4 | ChromaDB integration, hybrid ranking, and retrieval MVP | Planned |
+| 4 | ChromaDB integration, hybrid ranking, and retrieval MVP | Completed |
 | 5 | Flutter UI and accessibility implementation | Planned |
 | 6 | Integration, testing, privacy review, and performance optimization | Planned |
 | 7 | Documentation, open-source compliance, and release preparation | Planned |
@@ -266,7 +279,9 @@ The final interface will target WCAG 2.1 AA and include:
 - The project is not yet production-ready
 - Only the macOS development environment has been validated so far
 - The current ingestion milestone prioritizes TXT and PDF
-- DOCX parsing, image embeddings, OCR-related workflows, and full semantic retrieval are not yet implemented
+- DOCX parsing and OCR-related workflows are not yet implemented
+- The retrieval engine is implemented in the backend but is not yet exposed through FastAPI or the Flutter interface
+- Hybrid-ranking weights are explicit baseline values and have not yet been tuned with a labeled relevance dataset
 - Accessibility validation and clean-environment offline testing are scheduled for later milestones
 
 ## License
