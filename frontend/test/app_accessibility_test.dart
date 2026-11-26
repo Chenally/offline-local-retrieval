@@ -201,6 +201,22 @@ void main() {
     });
   });
 
+  group('Settings', () {
+    testWidgets('text size options change the text scale', (tester) async {
+      final harness = Harness();
+      await harness.pump(tester);
+      await pressShortcut(tester, LogicalKeyboardKey.digit3);
+
+      // No Slider: its value indicator broke the Windows accessibility bridge.
+      expect(find.byType(Slider), findsNothing);
+
+      await tester.tap(find.text('150%'));
+      await tester.pumpAndSettle();
+      expect(harness.settings.value.textScale, 1.5);
+      expect(find.text('Text size: 150%'), findsOneWidget);
+    });
+  });
+
   group('Errors', () {
     testWidgets('a search error is shown once, in the error panel', (tester) async {
       final harness = Harness();

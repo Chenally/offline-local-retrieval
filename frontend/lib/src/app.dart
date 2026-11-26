@@ -67,7 +67,15 @@ class _OfflineRetrievalAppState extends State<OfflineRetrievalApp> {
               data: media.copyWith(
                 textScaler: TextScaler.linear(systemFactor * settings.textScale),
               ),
-              child: child ?? const SizedBox.shrink(),
+              // Precaution: publish no semantics while the window has no size
+              // (for example when minimized). With every node invisible,
+              // Flutter keeps only the focused node and would later move it,
+              // a kind of update the Windows accessibility bridge handles
+              // poorly.
+              child: ExcludeSemantics(
+                excluding: media.size.isEmpty,
+                child: child ?? const SizedBox.shrink(),
+              ),
             );
           },
           home: HomeShell(

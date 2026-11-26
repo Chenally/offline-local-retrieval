@@ -5,6 +5,9 @@ import '../api/retrieval_api.dart';
 import '../state/settings_controller.dart';
 import 'widgets/accessibility.dart';
 
+/// Text sizes offered in Settings, applied on top of the system text size.
+const List<double> textScaleOptions = <double>[1.0, 1.25, 1.5, 1.75, 2.0];
+
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
     super.key,
@@ -137,19 +140,27 @@ class _SettingsPageState extends State<SettingsPage> {
               'Text size: ${(value.textScale * 100).round()}%',
               style: textTheme.labelLarge,
             ),
-            Semantics(
-              label: 'Text size',
-              child: Slider(
-              value: value.textScale,
-              min: minTextScale,
-              max: maxTextScale,
-              divisions: 4,
-              label: '${(value.textScale * 100).round()}%',
-              semanticFormatterCallback: (scale) =>
-                  'Text size ${(scale * 100).round()} percent',
-              onChanged: widget.settings.setTextScale,
-              ),
+            // Choice chips rather than a Slider: the Slider's value
+            // indicator lives in the app overlay, and while this page is
+            // hidden its semantics node had no parent in traversal order,
+            // which made the Windows accessibility bridge fail (NVDA crash,
+            // see docs/week5 section 9).
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: <Widget>[
+                for (final scale in textScaleOptions)
+                  ChoiceChip(
+                    label: Text(
+                      '${(scale * 100).round()}%',
+                      semanticsLabel: 'Text size ${(scale * 100).round()} percent',
+                    ),
+                    selected: (value.textScale - scale).abs() < 0.001,
+                    onSelected: (_) => widget.settings.setTextScale(scale),
+                  ),
+              ],
             ),
+            const SizedBox(height: 4),
             Text(
               'Applies on top of your system text size. Layouts adapt up to 200%.',
               style: textTheme.bodySmall,

@@ -64,7 +64,7 @@ Dependencies added (all published by the Flutter or Dart teams, BSD-3-Clause): `
 | 2.5.5 Target size (AAA) | 48 × 48 px minimum targets; verified with `androidTapTargetGuideline` and `iOSTapTargetGuideline` |
 | 3.3.1 Error identification | Errors say what happened and what to do, with a retry action |
 | 3.3.2 Labels or instructions | Every input has a visible label; the service address explains its expected format |
-| 4.1.2 Name, role, value | Result cards expose one button with a full description; switches, sliders and chips expose state and value |
+| 4.1.2 Name, role, value | Result cards expose one button with a full description; switches and chips expose state and value |
 | 4.1.3 Status messages | Search outcomes, indexing milestones and errors are announced without moving focus |
 
 ## 5. Running the App
@@ -129,7 +129,7 @@ Tested 2026-11-26 on Windows 11, Flutter 3.50.1 desktop build, `sample_data` lib
 | S5 | Filter chips announce selected / not selected | | |
 | S6 | Indexing milestones and completion are announced | | |
 | S7 | Service-not-running banner is announced | | |
-| S8 | Text-size slider announces its value | | |
+| S8 | Text-size options announce their value and selected state | | |
 
 ### 7.3 Visual
 
@@ -168,6 +168,7 @@ Tested 2026-11-26 on Windows 11.
 | On `sample_data`, "local documents without the cloud" showed the relevant PDF at 0% and an unrelated photo at 70%: min-max normalization scores results relative to each other, so the weaker of two text files gets 0 and the only image gets full marks | Calibrated fusion is now the default: keyword coverage and calibrated cosine similarity give absolute scores (backend `ranking.py`, regression test `test_calibrated_scores_do_not_depend_on_other_results`) |
 | Ctrl+1/2/3 did nothing after clicking empty space: on desktop that moves focus out of the search field, and the shortcuts only listened to focused widgets | Page shortcuts are registered on `HardwareKeyboard`, so they work wherever focus is (except while a dialog is open). Regression test "page shortcuts work when nothing has focus" |
 | At 200% text in a short window the side navigation rail overflowed (yellow and black stripes) | The rail scrolls when it is taller than the window. Regression test "200% text in a short window scrolls instead of overflowing" |
+| With NVDA running, the app closed and the console logged "Failed to update ui::AXTree, error: 0 will not be in the tree and is not the new root" and "Nodes left pending by the update". A new Flutter counter app did not crash, so the trigger was in this app. A semantics logger (`--dart-define=A11Y_DEBUG=true`, `lib/src/debug/semantics_logger.dart`) showed the cause: the Text size **Slider** on the hidden Settings page keeps its value indicator in the app overlay, and that overlay node had no parent in traversal order. The Windows bridge builds its tree from traversal order only, so it treated the orphan as the root and could not attach the rest of the update. Separately, page-level Focus wrappers inserted semantics nodes on focus, moving pages to a new parent | Text size is now a row of choice chips (100–200%) instead of a Slider; open tooltips are dismissed when switching pages; programmatic Focus wrappers use `includeSemantics: false`; no semantics are published while the window has no size (precaution). `semantics_reparent_test.dart` fails if any semantics node changes parent or is unreachable in traversal order during startup, resizing, minimizing, search, scrolling and page switching |
 | A search error was shown twice (status line and error panel), so it was also read twice | The status line is announced but not drawn while the error panel is shown. Regression test "a search error is shown once" |
 | Service banner and folder rows did not span the page; Search button misaligned | Layout fixes in `home_shell.dart`, `library_page.dart`, `search_page.dart` |
 
