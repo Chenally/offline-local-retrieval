@@ -27,3 +27,4 @@ models/mobileclip_s0_tokenizer.json
 
 # Evaluation datasets (downloaded and generated locally)
 evaluation/data/
+evaluation/runs/

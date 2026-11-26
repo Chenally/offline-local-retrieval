@@ -1,3 +1,4 @@
+import gzip
 import json
 from pathlib import Path
 
@@ -127,7 +128,16 @@ def test_run_benchmark_reports_metrics(tmp_path: Path) -> None:
     )
     retrieval = RetrievalService(embedder, store, keywords, manifest)
 
-    report = run_benchmark(out, indexing, retrieval, top_k=3)
+    resets: list[int] = []
+    report = run_benchmark(
+        out,
+        indexing,
+        retrieval,
+        top_k=3,
+        reset_query_cache=lambda: resets.append(1),
+    )
+
+    assert len(resets) == 3
 
     assert report.indexed_files == 4
     assert [item.modes for item in report.results] == [
@@ -140,3 +150,17 @@ def test_run_benchmark_reports_metrics(tmp_path: Path) -> None:
     assert hybrid.recall_at[3] == 1.0
     assert "Recall@1" in report.to_markdown()
     assert report.to_dict()["results"][0]["summary"]["recall_at"]["3"] >= 0
+
+
+def test_prepare_nq_subset_reads_gzip_files(tmp_path: Path) -> None:
+    beir = make_beir(tmp_path / "beir")
+
+    for name in ["corpus.jsonl", "queries.jsonl"]:
+        plain = beir / name
+        with gzip.open(beir / f"{name}.gz", "wb") as compressed:
+            compressed.write(plain.read_bytes())
+        plain.unlink()
+
+    queries, corpus = prepare_nq_subset(beir, tmp_path / "nq", num_distractors=1)
+
+    assert (queries, corpus) == (2, 3)
