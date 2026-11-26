@@ -7,6 +7,7 @@ import numpy as np
 from app.services.embeddings.types import (
     EmbeddingModality,
     EmbeddingSpace,
+    EmbeddingVector,
 )
 from numpy.typing import NDArray
 
@@ -26,3 +27,20 @@ class EmbeddingBackend(Protocol):
     ) -> NDArray[np.float32]:
         """Return one row per input and one column per dimension."""
         ...
+
+class Embedder(Protocol):
+    """Text and image embedding operations used by indexing and search.
+
+    Implemented by ``EmbeddingService`` and ``SynchronizedEmbeddingService``.
+    """
+
+    def embed_texts(
+        self,
+        texts: list[str],
+        space: EmbeddingSpace = EmbeddingSpace.TEXT_SEMANTIC,
+    ) -> list[EmbeddingVector]: ...
+
+    def embed_images(
+        self,
+        image_paths: list[str | Path],
+    ) -> list[EmbeddingVector]: ...

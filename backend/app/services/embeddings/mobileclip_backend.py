@@ -62,6 +62,7 @@ class MobileClipTextBackend:
     model_id = _MODEL_ID
     modality = EmbeddingModality.TEXT
     space = EmbeddingSpace.MULTIMODAL
+    dimension = _EMBEDDING_DIMENSION
 
     def __init__(
         self,
@@ -193,6 +194,7 @@ class MobileClipImageBackend:
     model_id = _MODEL_ID
     modality = EmbeddingModality.IMAGE
     space = EmbeddingSpace.MULTIMODAL
+    dimension = _EMBEDDING_DIMENSION
 
     def __init__(
         self,
