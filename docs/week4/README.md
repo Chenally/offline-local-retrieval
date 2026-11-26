@@ -99,15 +99,18 @@ The manifest is written last, so a file whose embedding or storage write fails i
 
 ### 4.5 Hybrid ranking
 
-Channels: `keyword` (BM25), `text_semantic` (BERT), `image_semantic` (MobileCLIP text-to-image).
+Channels: `keyword` (BM25), `text_semantic` (MiniLM), `image_semantic` (MobileCLIP text-to-image).
 
 1. Chunk hits are collapsed to the best chunk per document and channel.
-2. Weighted mode: min-max normalization within each channel. RRF mode: `1 / (k + rank)`, scaled so rank 1 scores 1.0.
+2. Each channel score is normalized to 0..1. Three methods are available through `OLR_FUSION_METHOD`:
+   - `calibrated` (default since Week 5): absolute scores. Keyword = fraction of the query's content words found in the passage or file name; semantic = cosine similarity mapped linearly from a per-model range (MiniLM 0.10–0.60, MobileCLIP 0.10–0.30) and clipped. Ties are broken by raw scores such as BM25.
+   - `weighted`: min-max scaling within each channel's candidates (the Week 4 default).
+   - `rrf`: `1 / (k + rank)`, scaled so rank 1 scores 1.0.
 3. `score = Σ weight × normalized / Σ weights of requested channels that can score this document kind`.
 
 Default weights are keyword 0.3, text semantic 0.7, image semantic 0.7. Text documents and images are therefore both scored on a 0..1 scale. Every result returns the raw score, normalized score, weight, contribution and rank for each channel.
 
-Weights and fusion method are configurable with `OLR_WEIGHT_KEYWORD`, `OLR_WEIGHT_TEXT_SEMANTIC`, `OLR_WEIGHT_IMAGE_SEMANTIC` and `OLR_FUSION_METHOD` (`weighted` or `rrf`).
+Why calibration became the default: Week 5 UI testing on `sample_data` (two relevant text files and one unrelated photo) showed that min-max scaling gave the relevant PDF 0% because it was the lower of two text candidates, and gave the unrelated photo 70% because it was the only image. Calibrated scores do not depend on which other documents were retrieved, so the displayed "% match" is meaningful. A regression test reproduces this case.
 
 ### 4.6 Concurrency and privacy
 
@@ -273,7 +276,7 @@ Results are written to `evaluation/results/<dataset>.json` and `.md`. Each run i
 | text_semantic (MiniLM) | 0.869 | 0.997 | 1.000 | 0.978 |
 | **keyword + text_semantic (hybrid)** | **0.876** | **1.000** | **1.000** | **0.984** |
 
-- Hybrid ranking is best on every metric, so the weighted min-max fusion does not let small semantic differences override exact keyword matches on this data.
+- Hybrid ranking is best on every metric. These numbers were measured with the Week 4 `weighted` (min-max) fusion; see the Week 5 notes for the calibrated default.
 - Semantic retrieval improves Recall@1 by 11 points over BM25: NQ questions and answer passages often use different wording.
 
 ### 9.2 Text-to-image retrieval: COCO subset
@@ -290,21 +293,11 @@ Results are written to `evaluation/results/<dataset>.json` and `.md`. Each run i
 ### 9.3 Interpretation and limits
 
 - These are small subsets with random distractors, which are easier than the full benchmarks. The numbers support relative comparisons between modes on this system; they are not comparable with published full-corpus BEIR or COCO 5K results.
-- Query latency and peak memory (laptop CPU, all models loaded):
-
-| Dataset | Modes | p50 ms | p95 ms | Peak memory |
-| --- | --- | ---: | ---: | ---: |
-| NQ subset | keyword | 6.9 | 9.8 | 555 MB |
-| NQ subset | text_semantic | 14.7 | 16.3 | |
-| NQ subset | keyword + text_semantic | 22.0 | 24.7 | |
-| COCO subset | image_semantic | 13.1 | 15.4 | 484 MB |
-| COCO subset | image_semantic + keyword | 13.4 | 14.8 | |
-
-  Hybrid latency is roughly the sum of its channels because each channel runs a separate query. Every search completes within 25 ms at p95.
+- Query latency (p50/p95) and peak memory are reported in `evaluation/results/*.md`. Runs before the cache-reset fix reused cached query embeddings in later mode sets and under-reported their latency.
 
 ## 10. Known Limitations
 
-- Min-max normalization always gives the top hit of a channel 1.0, even when it is weakly related. `min_raw_scores` and RRF are available as alternatives.
+- Calibration ranges are fixed per model; they come from sentence-pair diagnostics (MiniLM) and typical CLIP similarity ranges (MobileCLIP) and should be revisited if a model changes.
 - Folder and date filters are applied after candidate retrieval (5x `top_k`), so very selective filters may return fewer than `top_k` results.
 - Scanned PDFs without a text layer are indexed by file name only; OCR is out of scope.
 - Deleting a document from the FTS5 table scans the table; acceptable for personal libraries, revisit for very large ones.

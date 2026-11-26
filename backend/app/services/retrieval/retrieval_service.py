@@ -19,6 +19,7 @@ from app.services.retrieval.ranking import (
 from app.services.storage.keyword_index import KeywordIndex
 from app.services.storage.manifest import IndexManifest, ManifestRecord
 from app.services.storage.vector_store import VectorStore
+from app.services.text_units import keyword_coverage
 
 MAX_QUERY_LENGTH = 1000
 MAX_TOP_K = 100
@@ -168,6 +169,7 @@ class RetrievalService:
                     chunk_id=hit.chunk_id,
                     snippet=hit.text or None,
                     page_number=hit.page_number,
+                    absolute=keyword_coverage(text, hit.text, hit.file_name),
                 )
                 for hit in self._keyword_index.search(text, pool_size, extensions)
             ]
