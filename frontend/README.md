@@ -1,17 +1,29 @@
-# frontend
+# Offline Local Search — Flutter desktop app
 
-A new Flutter project.
+Accessible desktop interface for the local retrieval service in `../backend`.
 
-## Getting Started
+## Run
 
-This project is a starting point for a Flutter application.
+1. Start the backend from the repository root:
 
-A few resources to get you started if this is your first Flutter project:
+   ```bash
+   python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8765
+   ```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+2. Start the app:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+   ```bash
+   flutter pub get
+   flutter run -d windows   # or -d macos / -d linux
+   ```
+
+   On a new machine, add the platform runner first, for example `flutter create --platforms=windows .`
+
+## Test
+
+```bash
+flutter analyze
+flutter test
+```
+
+See `../docs/week5/README.md` for architecture, the WCAG 2.1 AA mapping and the manual test protocol, and `../docs/accessibility_guide.md` for the user guide.

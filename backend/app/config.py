@@ -47,7 +47,7 @@ class AppSettings:
                     os.environ.get("OLR_WEIGHT_IMAGE_SEMANTIC", 0.7)
                 ),
             },
-            method=FusionMethod(os.environ.get("OLR_FUSION_METHOD", "weighted")),
+            method=FusionMethod(os.environ.get("OLR_FUSION_METHOD", "calibrated")),
         )
 
         return cls(

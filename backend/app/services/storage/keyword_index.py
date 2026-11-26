@@ -36,6 +36,7 @@ class KeywordHit:
     score: float
     text: str
     page_number: int | None
+    file_name: str = ""
 
 
 class KeywordIndex:
@@ -156,7 +157,7 @@ class KeywordIndex:
             return []
 
         sql = f"""
-            SELECT chunk_id, document_id, kind, page_number, raw_text,
+            SELECT chunk_id, document_id, kind, page_number, raw_text, file_name,
                    bm25(keyword_chunks, {_BM25_WEIGHTS}) AS rank
             FROM keyword_chunks
             WHERE keyword_chunks MATCH ?
@@ -187,8 +188,9 @@ class KeywordIndex:
                 score=-float(rank),
                 text=raw_text,
                 page_number=page_number,
+                file_name=file_name,
             )
-            for chunk_id, document_id, kind, page_number, raw_text, rank in rows
+            for chunk_id, document_id, kind, page_number, raw_text, file_name, rank in rows
         ]
 
     def count_documents(self) -> int:

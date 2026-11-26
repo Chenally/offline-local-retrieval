@@ -16,7 +16,11 @@ class SearchMode(str, Enum):
 
 
 class FusionMethod(str, Enum):
+    # Absolute per-channel scores: keyword coverage and calibrated cosine.
+    CALIBRATED = "calibrated"
+    # Min-max scaling within each channel's candidate set.
     WEIGHTED = "weighted"
+    # Reciprocal rank fusion.
     RRF = "rrf"
 
 
@@ -33,14 +37,26 @@ DEFAULT_WEIGHTS: Mapping[SearchMode, float] = {
     SearchMode.IMAGE_SEMANTIC: 0.7,
 }
 
+# Cosine similarities mapped to 0 and 1 by the calibrated method. Derived from
+# tools/diagnose_text_embeddings.py (MiniLM: unrelated sentence pairs <= 0.09,
+# related >= 0.57) and the typical MobileCLIP text-to-image range, whose
+# matching caption/image pairs score far lower than text/text pairs.
+DEFAULT_SEMANTIC_RANGES: Mapping[SearchMode, tuple[float, float]] = {
+    SearchMode.TEXT_SEMANTIC: (0.10, 0.60),
+    SearchMode.IMAGE_SEMANTIC: (0.10, 0.30),
+}
+
 
 @dataclass(frozen=True, slots=True)
 class RankingConfig:
     weights: Mapping[SearchMode, float] = field(
         default_factory=lambda: dict(DEFAULT_WEIGHTS)
     )
-    method: FusionMethod = FusionMethod.WEIGHTED
+    method: FusionMethod = FusionMethod.CALIBRATED
     rrf_k: int = 60
+    semantic_ranges: Mapping[SearchMode, tuple[float, float]] = field(
+        default_factory=lambda: dict(DEFAULT_SEMANTIC_RANGES)
+    )
     # Raw-score floors per channel; hits below the floor are discarded.
     min_raw_scores: Mapping[SearchMode, float] = field(default_factory=dict)
 
@@ -50,6 +66,9 @@ class RankingConfig:
 
         if self.rrf_k <= 0:
             raise ValueError("rrf_k must be greater than zero")
+
+        if any(low >= high for low, high in self.semantic_ranges.values()):
+            raise ValueError("Each semantic range must have low < high")
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +81,8 @@ class ChannelCandidate:
     chunk_id: str | None = None
     snippet: str | None = None
     page_number: int | None = None
+    # Score already on an absolute 0..1 scale (keyword coverage), if any.
+    absolute: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,8 +110,20 @@ class HybridRanker:
 
     1. Chunk hits are collapsed to documents by keeping each document's
        best chunk per channel.
-    2. Scores are normalized per channel: min-max scaling for the weighted
-       method, ``1 / (k + rank)`` for reciprocal rank fusion.
+    2. Scores are normalized per channel to 0..1:
+
+       - calibrated (default): absolute scores that do not depend on which
+         other documents were retrieved. Keyword = fraction of the query's
+         content words present; semantic = cosine similarity mapped linearly
+         from a per-model ``(low, high)`` range and clipped.
+       - weighted: min-max scaling within the channel's candidates.
+       - rrf: ``1 / (k + rank)``, scaled so rank 1 scores 1.0.
+
+       Min-max scaling gives the best document of every channel full marks
+       even when it is unrelated, and zero to the worst even when it is
+       relevant. With few documents of a kind (for example one image in a
+       library) that misranks results, which is why calibration is the
+       default.
     3. The final score is the weighted sum of normalized scores divided by
        the total weight of the requested channels that *can* score that
        document kind. Dividing by applicable weight keeps images and text
@@ -119,7 +152,7 @@ class HybridRanker:
 
         for mode in requested_modes:
             best = self._best_per_document(mode, channel_hits.get(mode, ()))
-            per_channel[mode] = self._normalize(best)
+            per_channel[mode] = self._normalize(mode, best)
 
         documents: dict[str, dict[SearchMode, ChannelScore]] = {}
         candidates: dict[str, list[tuple[float, ChannelCandidate]]] = {}
@@ -161,7 +194,15 @@ class HybridRanker:
                 )
             )
 
-        ranked.sort(key=lambda item: (-item.score, item.document_id))
+        # Equal scores (e.g. several passages containing every query word)
+        # are ordered by the channels' raw scores, such as BM25.
+        ranked.sort(
+            key=lambda item: (
+                -round(item.score, 9),
+                -sum(score.raw for score in item.channel_scores.values()),
+                item.document_id,
+            )
+        )
         return ranked
 
     def _best_per_document(
@@ -188,10 +229,22 @@ class HybridRanker:
 
     def _normalize(
         self,
+        mode: SearchMode,
         ordered: list[ChannelCandidate],
     ) -> dict[str, tuple[int, ChannelCandidate, float]]:
         if not ordered:
             return {}
+
+        if self._config.method is FusionMethod.CALIBRATED:
+            semantic_range = self._config.semantic_ranges.get(mode)
+            return {
+                hit.document_id: (
+                    rank,
+                    hit,
+                    self._calibrated(hit, semantic_range, ordered),
+                )
+                for rank, hit in enumerate(ordered, start=1)
+            }
 
         if self._config.method is FusionMethod.RRF:
             # Scale so the top-ranked document receives 1.0.
@@ -217,6 +270,25 @@ class HybridRanker:
             )
             for rank, hit in enumerate(ordered, start=1)
         }
+
+    @staticmethod
+    def _calibrated(
+        hit: ChannelCandidate,
+        semantic_range: tuple[float, float] | None,
+        ordered: list[ChannelCandidate],
+    ) -> float:
+        if hit.absolute is not None:
+            return min(1.0, max(0.0, hit.absolute))
+
+        if semantic_range is not None:
+            low, high = semantic_range
+            return min(1.0, max(0.0, (hit.raw_score - low) / (high - low)))
+
+        # No absolute scale known for this channel: fall back to min-max.
+        highest = ordered[0].raw_score
+        lowest = ordered[-1].raw_score
+        spread = highest - lowest
+        return 1.0 if spread == 0 else (hit.raw_score - lowest) / spread
 
     @staticmethod
     def _representative(

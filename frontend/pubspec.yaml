@@ -1,5 +1,5 @@
 name: frontend
-description: "A new Flutter project."
+description: "Accessible desktop interface for the Offline Local Retrieval System."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -34,7 +34,12 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  file_selector: ^1.0.3
+  http: ^1.2.2
+  shared_preferences: ^2.3.3
+  url_launcher: ^6.3.1
 
+  material_ui: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
