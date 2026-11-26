@@ -29,6 +29,7 @@ def test_parse_valid_pdf() -> None:
     assert document.metadata == metadata
     assert document.page_count is not None
     assert document.page_count >= 1
+    assert len(document.page_texts) == document.page_count
 
 
 def test_parse_rejects_corrupted_pdf(

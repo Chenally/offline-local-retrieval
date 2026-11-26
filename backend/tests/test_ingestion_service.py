@@ -18,7 +18,7 @@ def test_ingest_processes_batch_and_records_failures(
         encoding="utf-8",
     )
 
-    (tmp_path / "unsupported.docx").write_bytes(
+    (tmp_path / "unsupported.xlsx").write_bytes(
         b"unsupported"
     )
 

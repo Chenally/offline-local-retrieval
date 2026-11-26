@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
+
+
+class DocumentKind(str, Enum):
+    """Top-level content category produced by a parser."""
+
+    TEXT = "text"
+    IMAGE = "image"
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +34,9 @@ class ParsedDocument:
     text: str
     metadata: FileMetadata
     page_count: int | None = None
+    kind: DocumentKind = DocumentKind.TEXT
+    # Per-page text for paged formats such as PDF; empty otherwise.
+    page_texts: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

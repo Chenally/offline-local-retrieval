@@ -5,6 +5,8 @@ from pathlib import Path
 
 from app.errors import UnsupportedFileTypeError
 from app.services.parsers.base import FileParser
+from app.services.parsers.docx_parser import DocxParser
+from app.services.parsers.image_parser import ImageParser
 from app.services.parsers.pdf_parser import PdfParser
 from app.services.parsers.txt_parser import TxtParser
 
@@ -19,6 +21,8 @@ class ParserRegistry:
         parser_instances = parsers or (
             TxtParser(),
             PdfParser(),
+            DocxParser(),
+            ImageParser(),
         )
 
         self._parsers: dict[str, FileParser] = {}
@@ -42,3 +46,6 @@ class ParserRegistry:
             raise UnsupportedFileTypeError(path)
 
         return parser
+
+    def supports(self, path: Path) -> bool:
+        return path.suffix.lower() in self._parsers

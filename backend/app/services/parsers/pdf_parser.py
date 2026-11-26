@@ -65,4 +65,5 @@ class PdfParser:
             text=text,
             metadata=metadata,
             page_count=page_count,
+            page_texts=tuple(page_texts),
         )

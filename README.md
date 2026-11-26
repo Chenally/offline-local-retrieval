@@ -2,7 +2,7 @@
 
 An offline-first, cross-platform application for discovering and retrieving information from local documents and images. The project is designed to make personal content easier to search without uploading private files to cloud services, while targeting WCAG 2.1 AA accessibility requirements.
 
-> **Development status:** This is an active eight-week software engineering project. Weeks 1 through 3 are complete, and Week 4 retrieval integration is the next milestone.
+> **Development status:** This is an active eight-week software engineering project. Weeks 1 through 4 are complete; the Week 5 Flutter UI and accessibility work is the next milestone.
 
 ## Project Motivation
 
@@ -52,12 +52,26 @@ This project aims to provide:
 - Completed 77 backend tests with 96.19% embedding-package coverage
 - Documented the implementation in [`docs/week3/README.md`](docs/week3/README.md)
 
+### Week 4 - Completed
+
+- Added DOCX parsing (`python-docx`) and JPG/PNG image ingestion
+- Added page-aware, overlapping text chunking sized for the BERT input
+- Integrated persistent ChromaDB collections bound to one embedding space and model each
+- Added a SQLite FTS5 keyword index with BM25 scoring and Chinese phrase support
+- Added a manifest for incremental indexing of new, changed, deleted and duplicate files
+- Implemented explainable hybrid ranking (weighted min-max or reciprocal rank fusion)
+- Added extension, folder and date filters
+- Exposed indexing jobs, index status, readiness and search through FastAPI
+- Added NQ and COCO benchmark preparation and a retrieval benchmark runner
+- Replaced the Week 3 MediaPipe BERT embedder with all-MiniLM-L6-v2 after diagnostics showed it could not separate related from unrelated sentences
+- Documented the implementation in [`docs/week4/README.md`](docs/week4/README.md)
+
 ## Planned Features
 
 - Local folder selection and recursive file discovery
 - Parsing for TXT, PDF, DOCX, JPG, and PNG files
 - SHA-256-based duplicate detection and incremental indexing
-- Offline text embeddings using a TensorFlow Lite BERT-compatible model
+- Offline text embeddings using all-MiniLM-L6-v2 (BERT architecture) on LiteRT
 - Offline text-to-image retrieval using MobileCLIP-compatible encoders
 - Local vector storage and similarity search with ChromaDB
 - Explainable hybrid ranking using keyword, text-semantic, and image-semantic scores
@@ -99,11 +113,11 @@ The architecture separates file input/output, parsing, embedding, vector storage
 | --- | --- |
 | Backend service | Python 3.11, FastAPI, Uvicorn |
 | Cross-platform UI | Flutter, Dart |
-| Document parsing | PDFium through `pypdfium2`, Apache Tika |
+| Document parsing | PDFium through `pypdfium2`, `python-docx` |
 | Local inference | LiteRT / TensorFlow Lite |
-| Text model | BERT-compatible LiteRT model |
+| Text model | all-MiniLM-L6-v2 (BERT architecture) on LiteRT, 384 dimensions |
 | Multimodal model | MobileCLIP-S0 text and image LiteRT encoders |
-| Vector storage | ChromaDB |
+| Vector storage | ChromaDB, SQLite FTS5 (keyword BM25) |
 | Backend testing | pytest, pytest-cov |
 | UI testing | Flutter Test |
 | Version control | Git, GitHub |
@@ -113,11 +127,11 @@ The architecture separates file input/output, parsing, embedding, vector storage
 
 | Format | Status | Intended processing |
 | --- | --- | --- |
-| TXT | In progress | UTF-8 text extraction |
-| PDF | In progress | PDFium text extraction |
-| DOCX | Planned | Apache Tika document extraction |
-| JPG | Planned | Image metadata and multimodal embedding |
-| PNG | Planned | Image metadata and multimodal embedding |
+| TXT | Supported | UTF-8 text extraction, chunking, BERT embedding |
+| PDF | Supported | PDFium per-page text extraction, chunking, BERT embedding |
+| DOCX | Supported | `python-docx` paragraph and table extraction |
+| JPG | Supported | Image validation and MobileCLIP embedding |
+| PNG | Supported | Image validation and MobileCLIP embedding |
 
 ## Repository Structure
 
@@ -153,7 +167,6 @@ offline_local_retrieval/
 - Git
 - Flutter SDK
 - Xcode for macOS desktop development
-- Apache Tika
 
 The current development environment has been validated on Apple Silicon macOS. Additional desktop platforms will be validated during the packaging phase.
 
@@ -211,14 +224,28 @@ Run the backend test suite from the repository root:
 PYTHONPATH=backend python -m pytest backend/tests -v
 ```
 
-Run the Week 2 coverage check:
+Run the coverage check:
 
 ```bash
 PYTHONPATH=backend python -m pytest backend/tests -v \
   --cov=app.services \
   --cov-report=term-missing \
-  --cov-fail-under=80
+  --cov-fail-under=85
 ```
+
+Search the local index once the service is running:
+
+```bash
+curl -s -X POST http://127.0.0.1:8765/index \
+  -H 'Content-Type: application/json' \
+  -d "{\"directory\": \"$PWD/sample_data\"}"
+
+curl -s -X POST http://127.0.0.1:8765/search \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "local documents without the cloud", "top_k": 5}'
+```
+
+See [`docs/week4/README.md`](docs/week4/README.md) for the full API and test plan.
 
 Run Flutter tests:
 
@@ -255,7 +282,7 @@ The final interface will target WCAG 2.1 AA and include:
 | 1 | Requirements, repository setup, and technical validation | Completed |
 | 2 | Architecture and file-ingestion foundation | Completed |
 | 3 | Offline text and multimodal embedding engine | Completed |
-| 4 | ChromaDB integration, hybrid ranking, and retrieval MVP | Planned |
+| 4 | ChromaDB integration, hybrid ranking, and retrieval MVP | Completed |
 | 5 | Flutter UI and accessibility implementation | Planned |
 | 6 | Integration, testing, privacy review, and performance optimization | Planned |
 | 7 | Documentation, open-source compliance, and release preparation | Planned |
@@ -265,8 +292,8 @@ The final interface will target WCAG 2.1 AA and include:
 
 - The project is not yet production-ready
 - Only the macOS development environment has been validated so far
-- The current ingestion milestone prioritizes TXT and PDF
-- DOCX parsing, image embeddings, OCR-related workflows, and full semantic retrieval are not yet implemented
+- The Flutter interface is not yet connected to the retrieval API
+- Scanned documents without a text layer are searchable by file name only; OCR is out of scope
 - Accessibility validation and clean-environment offline testing are scheduled for later milestones
 
 ## License
