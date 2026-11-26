@@ -283,7 +283,7 @@ The final interface will target WCAG 2.1 AA and include:
 | 2 | Architecture and file-ingestion foundation | Completed |
 | 3 | Offline text and multimodal embedding engine | Completed |
 | 4 | ChromaDB integration, hybrid ranking, and retrieval MVP | Completed |
-| 5 | Flutter UI and accessibility implementation | Planned |
+| 5 | Flutter UI and accessibility implementation | In progress |
 | 6 | Integration, testing, privacy review, and performance optimization | Planned |
 | 7 | Documentation, open-source compliance, and release preparation | Planned |
 | 8 | Packaging, final validation, GitHub release, and portfolio delivery | Planned |
@@ -292,7 +292,7 @@ The final interface will target WCAG 2.1 AA and include:
 
 - The project is not yet production-ready
 - Only the macOS development environment has been validated so far
-- The Flutter interface is not yet connected to the retrieval API
+- The backend must be started separately from the Flutter app until Week 6 integration
 - Scanned documents without a text layer are searchable by file name only; OCR is out of scope
 - Accessibility validation and clean-environment offline testing are scheduled for later milestones
 
