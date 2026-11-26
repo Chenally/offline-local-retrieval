@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -87,7 +87,14 @@ def run_benchmark(
     retrieval_service: RetrievalService,
     mode_sets: Sequence[Sequence[str]] | None = None,
     top_k: int = 10,
+    reset_query_cache: Callable[[], None] | None = None,
 ) -> BenchmarkReport:
+    """Index ``dataset_dir/corpus`` and evaluate every mode set.
+
+    ``reset_query_cache`` is called before each mode set so that query
+    embeddings computed for an earlier mode set are not reused, which would
+    make later mode sets look faster than they are.
+    """
     dataset_dir = dataset_dir.resolve()
     corpus_dir = dataset_dir / "corpus"
     info = load_dataset_info(dataset_dir)
@@ -109,6 +116,10 @@ def run_benchmark(
 
     for raw_modes in chosen_mode_sets:
         modes = frozenset(SearchMode(mode) for mode in raw_modes)
+
+        if reset_query_cache is not None:
+            reset_query_cache()
+
         rankings: list[list[str]] = []
         relevant_sets: list[set[str]] = []
         latencies: list[float] = []
@@ -148,11 +159,58 @@ def run_benchmark(
 
 
 def _peak_rss_mb() -> float | None:
+    """Peak resident memory of this process in MB, or None if unknown."""
+
+    if sys.platform == "win32":
+        return _windows_peak_working_set_mb()
+
     try:
         import resource
-    except ImportError:  # Windows
+    except ImportError:
         return None
 
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     # ru_maxrss is bytes on macOS and kilobytes on Linux.
     return peak / (1024 * 1024) if sys.platform == "darwin" else peak / 1024
+
+
+def _windows_peak_working_set_mb() -> float | None:  # pragma: no cover - Windows only
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        class ProcessMemoryCounters(ctypes.Structure):
+            _fields_ = [
+                ("cb", wintypes.DWORD),
+                ("PageFaultCount", wintypes.DWORD),
+                ("PeakWorkingSetSize", ctypes.c_size_t),
+                ("WorkingSetSize", ctypes.c_size_t),
+                ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                ("PagefileUsage", ctypes.c_size_t),
+                ("PeakPagefileUsage", ctypes.c_size_t),
+            ]
+
+        kernel32 = ctypes.WinDLL("kernel32")
+        psapi = ctypes.WinDLL("psapi")
+        kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+        psapi.GetProcessMemoryInfo.argtypes = [
+            wintypes.HANDLE,
+            ctypes.POINTER(ProcessMemoryCounters),
+            wintypes.DWORD,
+        ]
+        psapi.GetProcessMemoryInfo.restype = wintypes.BOOL
+
+        counters = ProcessMemoryCounters()
+        counters.cb = ctypes.sizeof(counters)
+
+        if not psapi.GetProcessMemoryInfo(
+            kernel32.GetCurrentProcess(), ctypes.byref(counters), counters.cb
+        ):
+            return None
+
+        return counters.PeakWorkingSetSize / (1024 * 1024)
+    except Exception:
+        return None

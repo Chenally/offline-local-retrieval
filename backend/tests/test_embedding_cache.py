@@ -21,3 +21,14 @@ def test_cache_evicts_least_recently_used_value() -> None:
 def test_cache_rejects_invalid_capacity() -> None:
     with pytest.raises(ValueError, match="max_entries"):
         EmbeddingCache(max_entries=0)
+
+
+def test_cache_clear_removes_all_values() -> None:
+    cache = EmbeddingCache(max_entries=4)
+    cache.put("a", (1.0,))
+    cache.put("b", (2.0,))
+
+    cache.clear()
+
+    assert len(cache) == 0
+    assert cache.get("a") is None

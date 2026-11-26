@@ -32,3 +32,11 @@ class EmbeddingCache:
 
             while len(self._values) > self._max_entries:
                 self._values.popitem(last=False)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._values.clear()
+
+    def __len__(self) -> int:
+        with self._lock:
+            return len(self._values)

@@ -60,6 +60,11 @@ class EmbeddingService:
 
             self._backends[key] = backend
 
+    def clear_cache(self) -> None:
+        """Drop cached vectors, e.g. so benchmark latencies include inference."""
+
+        self._cache.clear()
+
     def embed_texts(
         self,
         texts: list[str],

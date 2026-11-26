@@ -1,0 +1,55 @@
+{
+  "dataset": "coco-val2017-subset",
+  "corpus_files": 500,
+  "indexed_files": 500,
+  "index_errors": 0,
+  "indexing_seconds": 35.7283449999959,
+  "files_per_second": 13.994490928702614,
+  "peak_rss_mb": 484.3359375,
+  "top_k": 10,
+  "results": [
+    {
+      "modes": [
+        "image_semantic"
+      ],
+      "summary": {
+        "query_count": 500,
+        "recall_at": {
+          "1": 0.674,
+          "5": 0.922,
+          "10": 0.974
+        },
+        "hit_at": {
+          "1": 0.674,
+          "5": 0.922,
+          "10": 0.974
+        },
+        "mrr": 0.7792404761904758,
+        "latency_p50_ms": 13.130999999702908,
+        "latency_p95_ms": 15.388600004371256
+      }
+    },
+    {
+      "modes": [
+        "image_semantic",
+        "keyword"
+      ],
+      "summary": {
+        "query_count": 500,
+        "recall_at": {
+          "1": 0.674,
+          "5": 0.922,
+          "10": 0.974
+        },
+        "hit_at": {
+          "1": 0.674,
+          "5": 0.922,
+          "10": 0.974
+        },
+        "mrr": 0.7792404761904758,
+        "latency_p50_ms": 13.374499998462852,
+        "latency_p95_ms": 14.836400005151518
+      }
+    }
+  ]
+}

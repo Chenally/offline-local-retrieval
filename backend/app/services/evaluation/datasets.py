@@ -12,6 +12,7 @@ evaluate text and image retrieval:
 from __future__ import annotations
 
 import csv
+import gzip
 import json
 import random
 import re
@@ -130,7 +131,8 @@ def prepare_nq_subset(
     """Sample Natural Questions queries plus distractor passages.
 
     ``beir_dir`` is the BEIR packaging of NQ (``corpus.jsonl``,
-    ``queries.jsonl`` and ``qrels/<split>.tsv``). The full corpus has
+    ``queries.jsonl`` and ``qrels/<split>.tsv``). The JSONL files may also
+    be gzip-compressed (``corpus.jsonl.gz``), as distributed on Hugging Face. The full corpus has
     millions of passages, so it is streamed once and only the relevant
     passages plus a reservoir sample of distractors are written.
     """
@@ -147,7 +149,7 @@ def prepare_nq_subset(
 
     query_text: dict[str, str] = {}
 
-    for item in _iter_jsonl(beir_dir / "queries.jsonl"):
+    for item in _iter_jsonl(_jsonl_path(beir_dir, "queries")):
         if item["_id"] in qrels:
             query_text[item["_id"]] = item["text"]
 
@@ -161,7 +163,7 @@ def prepare_nq_subset(
     seen_distractors = 0
     written: set[str] = set()
 
-    for item in _iter_jsonl(beir_dir / "corpus.jsonl"):
+    for item in _iter_jsonl(_jsonl_path(beir_dir, "corpus")):
         document_id = item["_id"]
 
         if document_id in relevant_ids:
@@ -229,8 +231,20 @@ def _write_passage(corpus_dir: Path, item: dict) -> None:
     (corpus_dir / _passage_file_name(item["_id"])).write_text(body, encoding="utf-8")
 
 
+def _jsonl_path(directory: Path, stem: str) -> Path:
+    plain = directory / f"{stem}.jsonl"
+    compressed = directory / f"{stem}.jsonl.gz"
+
+    if plain.is_file() or not compressed.is_file():
+        return plain
+
+    return compressed
+
+
 def _iter_jsonl(path: Path) -> Iterator[dict]:
-    with path.open(encoding="utf-8") as file:
+    opener = gzip.open if path.suffix == ".gz" else open
+
+    with opener(path, "rt", encoding="utf-8") as file:
         for line in file:
             if line.strip():
                 yield json.loads(line)

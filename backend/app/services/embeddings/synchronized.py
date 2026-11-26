@@ -33,3 +33,7 @@ class SynchronizedEmbeddingService:
     ) -> list[EmbeddingVector]:
         with self._lock:
             return self._service.embed_images(image_paths)
+
+    def clear_cache(self) -> None:
+        with self._lock:
+            self._service.clear_cache()

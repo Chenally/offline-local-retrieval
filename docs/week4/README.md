@@ -1,6 +1,6 @@
 # Week 4 — Vector Storage, Hybrid Ranking and Retrieval MVP
 
-**Status:** Implementation complete; benchmark results pending a run with the real models
+**Status:** Complete
 
 ## 1. Objective
 
@@ -215,17 +215,18 @@ Disable Wi-Fi (or block network access for the Python process), restart the serv
 
 | Environment | Tests | Coverage (`app.services`) |
 | --- | --- | --- |
-| Windows 11, Python 3.11, real BERT-family + MobileCLIP models | 205 passed, 0 skipped | 96.19% |
+| Windows 11, Python 3.11, real MiniLM + MobileCLIP models | 205 passed, 0 skipped | 96.19% |
 
 ## 7. Text Embedding Model Replacement
 
 The first real-model end-to-end test showed that the Week 3 text model, MediaPipe `bert_embedder`, could not rank a tomato-soup recipe above an unrelated document for the query "how do I make tomato soup". `tools/diagnose_text_embeddings.py` isolated the cause:
 
-| Check | MediaPipe `bert_embedder` | MobileCLIP text encoder |
-| --- | ---: | ---: |
-| Related > unrelated (5 sentence triples) | 3 / 5 | 5 / 5 |
-| Mean margin (related − unrelated cosine) | −0.062 | 0.318 |
-| Project vectors vs MediaPipe `TextEmbedder` | cosine 1.0000 | — |
+| Check | MediaPipe `bert_embedder` | MobileCLIP text encoder | all-MiniLM-L6-v2 (adopted) |
+| --- | ---: | ---: | ---: |
+| Related > unrelated (5 sentence triples) | 3 / 5 | 5 / 5 | 5 / 5 |
+| Mean margin (related − unrelated cosine) | −0.062 | 0.318 | 0.669 |
+| Highest unrelated-pair cosine | 0.903 | 0.610 | 0.085 |
+| Project vectors vs MediaPipe `TextEmbedder` | cosine 1.0000 | — | — |
 
 The project's tokenization and tensor mapping reproduce MediaPipe exactly, so the defect is the model: it exposes the raw BERT pooler output, which is not trained for sentence similarity (for example, "Where are my tax documents?" scored 0.903 against a football sentence and 0.487 against a tax-return sentence).
 
@@ -246,7 +247,9 @@ Then run `python tools/verify_models.py`, which reports checksums, loads every b
 ## 9. Retrieval Benchmark
 
 ```bash
-# Natural Questions (BEIR packaging: corpus.jsonl, queries.jsonl, qrels/test.tsv)
+# Natural Questions (BEIR packaging). corpus.jsonl[.gz] and queries.jsonl[.gz] from
+# huggingface.co/datasets/BeIR/nq at revision ed7edb11ab8c173ff4394c30ff266c7297904b24
+# (later revisions store Parquet), qrels/test.tsv from huggingface.co/datasets/BeIR/nq-qrels
 python evaluation/prepare_nq_subset.py --beir-dir ~/datasets/beir/nq \
   --out evaluation/data/nq --num-queries 300 --num-distractors 2000
 python evaluation/run_retrieval_benchmark.py --dataset evaluation/data/nq
@@ -258,14 +261,46 @@ python evaluation/prepare_coco_subset.py \
 python evaluation/run_retrieval_benchmark.py --dataset evaluation/data/coco
 ```
 
-Results are written to `evaluation/results/<dataset>.json` and `.md` and report Recall@1/5/10, MRR, query latency p50/p95, indexing throughput and peak memory for each mode set (for NQ: keyword only, semantic only, hybrid).
+Results are written to `evaluation/results/<dataset>.json` and `.md`. Each run indexes into a cleared `evaluation/runs/<dataset>/` folder, and the query-embedding cache is reset before every mode set so that latencies include query inference.
 
-| Dataset | Modes | Recall@1 | Recall@5 | Recall@10 | MRR | p95 ms |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| NQ subset | keyword | TBD | TBD | TBD | TBD | TBD |
-| NQ subset | text_semantic | TBD | TBD | TBD | TBD | TBD |
-| NQ subset | keyword + text_semantic | TBD | TBD | TBD | TBD | TBD |
-| COCO subset | image_semantic | TBD | TBD | TBD | TBD | TBD |
+### 9.1 Text retrieval: Natural Questions subset
+
+300 NQ test questions; corpus of 2,361 passages (all relevant passages plus 2,000 random distractors from the 2.68M-passage BEIR corpus). Indexing took 101.7 s (23 passages/s) on a laptop CPU.
+
+| Modes | Recall@1 | Recall@5 | Recall@10 | MRR |
+| --- | ---: | ---: | ---: | ---: |
+| keyword (BM25) | 0.759 | 0.936 | 0.964 | 0.890 |
+| text_semantic (MiniLM) | 0.869 | 0.997 | 1.000 | 0.978 |
+| **keyword + text_semantic (hybrid)** | **0.876** | **1.000** | **1.000** | **0.984** |
+
+- Hybrid ranking is best on every metric, so the weighted min-max fusion does not let small semantic differences override exact keyword matches on this data.
+- Semantic retrieval improves Recall@1 by 11 points over BM25: NQ questions and answer passages often use different wording.
+
+### 9.2 Text-to-image retrieval: COCO subset
+
+500 randomly sampled COCO val2017 images; one human caption per image is the query and the image is the only relevant item. Indexing took 39.0 s (13 images/s).
+
+| Modes | Recall@1 | Recall@5 | Recall@10 | MRR |
+| --- | ---: | ---: | ---: | ---: |
+| image_semantic (MobileCLIP-S0) | 0.674 | 0.922 | 0.974 | 0.779 |
+| image_semantic + keyword | 0.674 | 0.922 | 0.974 | 0.779 |
+
+- COCO file names are numeric, so the keyword channel finds nothing. The identical scores confirm that applicable-weight normalization does not penalize images when the keyword channel is empty.
+
+### 9.3 Interpretation and limits
+
+- These are small subsets with random distractors, which are easier than the full benchmarks. The numbers support relative comparisons between modes on this system; they are not comparable with published full-corpus BEIR or COCO 5K results.
+- Query latency and peak memory (laptop CPU, all models loaded):
+
+| Dataset | Modes | p50 ms | p95 ms | Peak memory |
+| --- | --- | ---: | ---: | ---: |
+| NQ subset | keyword | 6.9 | 9.8 | 555 MB |
+| NQ subset | text_semantic | 14.7 | 16.3 | |
+| NQ subset | keyword + text_semantic | 22.0 | 24.7 | |
+| COCO subset | image_semantic | 13.1 | 15.4 | 484 MB |
+| COCO subset | image_semantic + keyword | 13.4 | 14.8 | |
+
+  Hybrid latency is roughly the sum of its channels because each channel runs a separate query. Every search completes within 25 ms at p95.
 
 ## 10. Known Limitations
 
