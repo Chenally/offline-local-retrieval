@@ -155,7 +155,13 @@ class _SearchPageState extends State<SearchPage> {
         children: <Widget>[
           ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 240, maxWidth: 640),
-            child: TextField(
+            // NVDA read the label and example but not the helper line below
+            // the box, so the keyboard instructions are added to the hint
+            // that screen readers announce on focus.
+            child: Semantics(
+              container: true,
+              hint: 'Press Enter to search, Escape to clear',
+              child: TextField(
               controller: _controller,
               focusNode: widget.searchFocusNode,
               autofocus: true,
@@ -179,6 +185,7 @@ class _SearchPageState extends State<SearchPage> {
                       ),
               ),
               onChanged: (_) => setState(() {}),
+              ),
             ),
           ),
           Padding(

@@ -201,6 +201,19 @@ void main() {
     });
   });
 
+  group('Screen reader text', () {
+    testWidgets('search box hint includes the keyboard instructions', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final harness = Harness();
+      await harness.pump(tester);
+
+      final data = tester.getSemantics(find.byType(TextField).first).getSemanticsData();
+      expect(data.label, contains('Search your files'));
+      expect(data.hint, contains('Press Enter to search, Escape to clear'));
+      semantics.dispose();
+    });
+  });
+
   group('Settings', () {
     testWidgets('text size options change the text scale', (tester) async {
       final harness = Harness();

@@ -120,16 +120,20 @@ Tested 2026-11-26 on Windows 11, Flutter 3.50.1 desktop build, `sample_data` lib
 
 ### 7.2 Screen readers
 
+Tested 2026-11-26 with NVDA 2026.1.1 on Windows 11 (Chinese voice; role words such as 按钮 "button", 编辑框 "edit", 已选择 "selected" and 警告 "alert" are NVDA's). Evidence: NVDA Speech Viewer logs. No Mac was available, so VoiceOver is not yet tested.
+
 | # | Check | NVDA (Windows) | VoiceOver (macOS) |
 | --- | --- | --- | --- |
-| S1 | Page headings are announced and navigable with H | | |
-| S2 | Search box announces its label and hint | | |
-| S3 | "N results for …" is announced after a search | | |
-| S4 | A result reads file name, type, page, relevance and why it matched | | |
-| S5 | Filter chips announce selected / not selected | | |
-| S6 | Indexing milestones and completion are announced | | |
-| S7 | Service-not-running banner is announced | | |
-| S8 | Text-size options announce their value and selected state | | |
+| S1 | Page changes are announced | Pass: "Search page", "Library page", "Settings page" on Ctrl+1/2/3. Quick navigation by heading (H) is a browse-mode feature for web content and does not apply to a desktop app | Not tested |
+| S2 | Search box announces its label, example and keyboard instructions | Partial → fixed: label and example were read, the helper line "Press Enter to search, Escape to clear" was not. It is now part of the box's hint (re-test) | Not tested |
+| S3 | "N results for …" is announced after a search | Pass: "3 results for "local documents without the cloud"." (preceded by the filter status "All file types are included.") | Not tested |
+| S4 | A result reads file name, type, page, relevance and why it matched | Pass: "Result 2 of 3, sample.pdf, PDF document, page 1, relevance 100 percent, matched by text meaning 100 percent and keywords 100 percent, excerpt: …, button"; folder button "Show sample.pdf in its folder" | Not tested |
+| S5 | Filter chips announce their purpose and selected state | Pass: "Keywords. Find files containing the exact words, button, selected"; unselected chips are read without a state word | Not tested |
+| S6 | Indexing milestones and completion are announced | Pass: "Indexing sample_data…", "Finished indexing sample_data: 0 new or changed, 3 unchanged." | Not tested |
+| S7 | Service-not-running message is announced | | Not tested |
+| S8 | Text-size options announce their value and selected state | Pass: "Text size 150 percent, button, selected" | Not tested |
+
+Before these checks NVDA made the app close at start-up; see the first finding in section 9.
 
 ### 7.3 Visual
 
