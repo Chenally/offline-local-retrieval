@@ -47,7 +47,7 @@ The control that has keyboard focus always shows a thick outline.
 
 ## Seeing more comfortably
 
-- **Text size:** Settings → Text size slider, from 100% to 200%. This adds to your operating system's text size.
+- **Text size:** Settings → Text size, choose 100%, 125%, 150%, 175% or 200%. This adds to your operating system's text size.
 - **High contrast:** Settings → High contrast switch. The app also switches automatically when Windows contrast themes or macOS Increase Contrast are on.
 - **Dark mode:** Settings → Theme → Dark.
 

@@ -201,6 +201,35 @@ void main() {
     });
   });
 
+  group('Screen reader text', () {
+    testWidgets('search box hint includes the keyboard instructions', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final harness = Harness();
+      await harness.pump(tester);
+
+      final data = tester.getSemantics(find.byType(TextField).first).getSemanticsData();
+      expect(data.label, contains('Search your files'));
+      expect(data.hint, contains('Press Enter to search, Escape to clear'));
+      semantics.dispose();
+    });
+  });
+
+  group('Settings', () {
+    testWidgets('text size options change the text scale', (tester) async {
+      final harness = Harness();
+      await harness.pump(tester);
+      await pressShortcut(tester, LogicalKeyboardKey.digit3);
+
+      // No Slider: its value indicator broke the Windows accessibility bridge.
+      expect(find.byType(Slider), findsNothing);
+
+      await tester.tap(find.text('150%'));
+      await tester.pumpAndSettle();
+      expect(harness.settings.value.textScale, 1.5);
+      expect(find.text('Text size: 150%'), findsOneWidget);
+    });
+  });
+
   group('Errors', () {
     testWidgets('a search error is shown once, in the error panel', (tester) async {
       final harness = Harness();

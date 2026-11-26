@@ -96,6 +96,8 @@ class _FocusOutlineState extends State<FocusOutline> {
     return Focus(
       canRequestFocus: false,
       skipTraversal: true,
+      // Only tracks focus for the outline; adds nothing for screen readers.
+      includeSemantics: false,
       onFocusChange: (focused) => setState(() => _focused = focused),
       child: DecoratedBox(
         position: DecorationPosition.foreground,

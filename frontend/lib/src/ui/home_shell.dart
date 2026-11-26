@@ -133,6 +133,9 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   void _select(int index) {
+    // A tooltip left open would keep a semantics node whose anchor is on
+    // the page being hidden.
+    Tooltip.dismissAllToolTips();
     setState(() => _index = index);
     announce(context, '${_destinations[index].label} page');
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -182,7 +185,16 @@ class _HomeShellState extends State<HomeShell> {
                   // Hide inactive pages from keyboard focus and screen readers.
                   child: ExcludeSemantics(
                     excluding: i != _index,
-                    child: Focus(focusNode: _pageFocus[i], child: pages[i]),
+                    // A programmatic focus target only. It must not add a
+                    // semantics node: toggling its "focused" state inserted
+                    // a node above the page, moving the page's node to a new
+                    // parent, which the Windows accessibility bridge can fail
+                    // to apply (NVDA crash, see docs/week5 section 9).
+                    child: Focus(
+                      focusNode: _pageFocus[i],
+                      includeSemantics: false,
+                      child: pages[i],
+                    ),
                   ),
                 ),
             ],
@@ -192,7 +204,7 @@ class _HomeShellState extends State<HomeShell> {
     );
 
     return Focus(
-      autofocus: false,
+      includeSemantics: false,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final wide = constraints.maxWidth >= wideLayoutBreakpoint;
