@@ -2,7 +2,7 @@
 
 An offline-first, cross-platform application for discovering and retrieving information from local documents and images. The project is designed to make personal content easier to search without uploading private files to cloud services, while targeting WCAG 2.1 AA accessibility requirements.
 
-> **Development status:** This is an active eight-week software engineering project. Weeks 1 through 4 are complete; the Week 5 Flutter UI and accessibility work is the next milestone.
+> **Development status:** This is an active eight-week software engineering project. Weeks 1 through 4 are complete. Week 5 (Flutter desktop UI and accessibility) is implemented and validated with keyboard-only, visual and NVDA screen reader checks; usability sessions are still to run.
 
 ## Project Motivation
 
@@ -65,6 +65,17 @@ This project aims to provide:
 - Added NQ and COCO benchmark preparation and a retrieval benchmark runner
 - Replaced the Week 3 MediaPipe BERT embedder with all-MiniLM-L6-v2 after diagnostics showed it could not separate related from unrelated sentences
 - Documented the implementation in [`docs/week4/README.md`](docs/week4/README.md)
+
+### Week 5 - In Progress
+
+- Built the Flutter desktop UI: Search, Library (folders and indexing status) and Settings screens, with recoverable error messages
+- Added keyboard shortcuts (Ctrl+F, Ctrl+1–3, Esc), visible focus and screen reader labels and announcements
+- Added high-contrast themes and text scaling up to 200%, with layouts that scroll or reflow instead of clipping
+- Made calibrated score fusion the default ranking so relevance percentages no longer depend on which other files were retrieved
+- Found and fixed a Windows screen reader crash caused by a semantics node outside traversal order; added a regression test and an opt-in semantics logger
+- Validated keyboard-only tasks, 200% text, narrow windows, high contrast and NVDA (Windows) checks; results in [`docs/week5/README.md`](docs/week5/README.md)
+- Drafted the [accessibility user guide](docs/accessibility_guide.md)
+- Remaining: usability sessions with 3–5 participants and VoiceOver (macOS) checks
 
 ## Planned Features
 
@@ -291,10 +302,10 @@ The final interface will target WCAG 2.1 AA and include:
 ## Known Limitations
 
 - The project is not yet production-ready
-- Only the macOS development environment has been validated so far
+- Validated on macOS (backend) and Windows 11 (backend and Flutter UI); Linux is untested
 - The backend must be started separately from the Flutter app until Week 6 integration
 - Scanned documents without a text layer are searchable by file name only; OCR is out of scope
-- Accessibility validation and clean-environment offline testing are scheduled for later milestones
+- Usability testing, VoiceOver checks and clean-environment offline testing are scheduled for later milestones
 
 ## License
 
